@@ -236,3 +236,88 @@ int main() {
 }
 ```
 :pushpin: `TAG step-00-03-source-code`
+
+9. Spin the Container: 
+
+Press the button at the very lower left (><)
+![alt text](images/container1.png)
+Then "Reopen in Container"
+![alt text](images/reopen-container.png)
+
+It should look like this:
+![alt text](images/container-on.png)
+
+
+
+10. Compile and Run
+    1. Check all is in order, see below for the expected output
+
+   ```bash
+      vscode ➜ /workspaces/the-problem (main) $ make doctor
+      == Toolchain doctor ==
+      --- g++
+      g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+      --- clang++
+      Ubuntu clang version 18.1.3 (1ubuntu1)
+      --- make
+      GNU Make 4.3
+      --- valgrind
+      valgrind-3.22.0
+      --- gdb
+      GNU gdb (Ubuntu 15.0.50.20240403-0ubuntu1) 15.0.50.20240403-git
+      --- git
+      git version 2.52.0
+      --- gh (optional)
+      gh version 2.87.2 (2026-02-20)
+      vscode ➜ /workspaces/the-problem (main) $ 
+   ```
+  2. `make` the program
+  ```bash
+      vscode ➜ /workspaces/the-problem (main) $ make
+      g++ -std=c++20 -g -O0 -Wall -Wextra -pedantic -Iinclude src/main.cpp src/buffer.cpp -o hook 
+      vscode ➜ /workspaces/the-problem (main) $ ./hook
+      free(): double free detected in tcache 2
+      Aborted
+      vscode ➜ /workspaces/the-problem (main) $ 
+  ```
+  3.  `make` using sanitation (ASan = Address Sanitizer)
+  ```bash
+      vscode ➜ /workspaces/the-problem (main) $ make asan
+      clang++ -std=c++20 -g -O0 -Wall -Wextra -pedantic -Iinclude -fsanitize=address,undefined -fno-omit-frame-pointer src/main.cpp src/buffer.cpp -o hook_asan
+      vscode ➜ /workspaces/the-problem (main) $ ./hook_asan 
+      =================================================================
+      ==2093==ERROR: AddressSanitizer: attempting double-free on 0x502000000010 in thread T0:
+          #0 0xaaaac15b19c4 in operator delete[](void*) (/workspaces/the-problem/hook_asan+0x1119c4) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+          #1 0xaaaac15b3cc8 in Buffer::ExplodeForDemo() /workspaces/the-problem/src/buffer.cpp:17:5
+          #2 0xaaaac15b33a0 in main /workspaces/the-problem/src/main.cpp:14:7
+          #3 0xffff7fa784c0 in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+          #4 0xffff7fa78594 in __libc_start_main csu/../csu/libc-start.c:360:3
+          #5 0xaaaac14d4b2c in _start (/workspaces/the-problem/hook_asan+0x34b2c) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+
+      0x502000000010 is located 0 bytes inside of 16-byte region [0x502000000010,0x502000000020)
+      freed by thread T0 here:
+          #0 0xaaaac15b19c4 in operator delete[](void*) (/workspaces/the-problem/hook_asan+0x1119c4) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+          #1 0xaaaac15b3cc8 in Buffer::ExplodeForDemo() /workspaces/the-problem/src/buffer.cpp:17:5
+          #2 0xaaaac15b3398 in main /workspaces/the-problem/src/main.cpp:13:7
+          #3 0xffff7fa784c0 in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+          #4 0xffff7fa78594 in __libc_start_main csu/../csu/libc-start.c:360:3
+          #5 0xaaaac14d4b2c in _start (/workspaces/the-problem/hook_asan+0x34b2c) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+
+      previously allocated by thread T0 here:
+          #0 0xaaaac15b1128 in operator new[](unsigned long) (/workspaces/the-problem/hook_asan+0x111128) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+          #1 0xaaaac15b37ac in Buffer::Buffer(unsigned long) /workspaces/the-problem/src/buffer.cpp:4:46
+          #2 0xaaaac15b3368 in main /workspaces/the-problem/src/main.cpp:8:12
+          #3 0xffff7fa784c0 in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+          #4 0xffff7fa78594 in __libc_start_main csu/../csu/libc-start.c:360:3
+          #5 0xaaaac14d4b2c in _start (/workspaces/the-problem/hook_asan+0x34b2c) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4)
+
+      SUMMARY: AddressSanitizer: double-free (/workspaces/the-problem/hook_asan+0x1119c4) (BuildId: 1414a2606e93ef27f491ddf7cdcf742f06e160d4) in operator delete[](void*)
+      ==2093==ABORTING
+      vscode ➜ /workspaces/the-problem (main) $ 
+  ```
+
+  > Why is the program crashing?
+
+  > What is all that output from `hook_asan`?
+
+  
